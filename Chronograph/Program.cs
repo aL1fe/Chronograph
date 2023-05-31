@@ -2,6 +2,12 @@
 enum Every
 {
     Monday,
+    Tuesday,
+    Wednesday,
+    Thursday,
+    Friday,
+    Saturday,
+    Sunday,
     // LastDayOfMonth
     // FirstDayOfMonth
     Second, 
@@ -14,28 +20,28 @@ enum Every
 }
 class Program
 {
-    static Task Main()
+    static void Main()
     {
+        Console.WriteLine("Press Enter to exit...");
         var cts = new CancellationTokenSource();
 
         var job = new Joba();
         
         var scheduler = new TaskScheduler();
         var now = DateTime.Now;
-        var startTime = new DateTime(now.Year, now.Month, now.Day, now.Hour, 14, 20);
+        var startTime = new DateTime(now.Year, now.Month, now.Day, now.Hour, 09, 33);
         
-        var task2 = Task.Run(() => scheduler.JobRunner(
+        var task = Task.Run(() => scheduler.JobRunner(
             startTime, 
             Every.Second, 
-            30,
+            11,
             job.Foo, 
-            false,
+            true,
             true,
             cts));
      
         Console.ReadLine();
         cts.Cancel();
         Console.WriteLine("Main thread finished.");
-        return Task.CompletedTask;
     }
 }
