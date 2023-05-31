@@ -1,7 +1,7 @@
 ﻿namespace Chronograph;
 enum Every
 {
-    // Monday,
+    Monday,
     // LastDayOfMonth
     // FirstDayOfMonth
     Second, 
@@ -17,20 +17,25 @@ class Program
     static Task Main()
     {
         var cts = new CancellationTokenSource();
-        
-        var d = new TaskScheduler();
-        TaskScheduler.VoidMethod method = MyMethod;
 
-        var task = d.JobRunner(method, "hello", cts);
+        var job = new Joba();
+        
+        var scheduler = new TaskScheduler();
+        var now = DateTime.Now;
+        var startTime = new DateTime(now.Year, now.Month, now.Day, now.Hour, 14, 20);
+        
+        var task2 = Task.Run(() => scheduler.JobRunner(
+            startTime, 
+            Every.Second, 
+            30,
+            job.Foo, 
+            false,
+            true,
+            cts));
      
         Console.ReadLine();
         cts.Cancel();
         Console.WriteLine("Main thread finished.");
         return Task.CompletedTask;
-    }
-
-    static void MyMethod(string message)
-    {
-        Console.WriteLine(message);  
     }
 }
