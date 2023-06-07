@@ -2,7 +2,7 @@
 
 public class TaskScheduler
 {
-    public async Task JobRunner(
+    public void JobRunner(
         DateTime startTime,
         Enum periodic,
         int interval,
@@ -11,16 +11,19 @@ public class TaskScheduler
         bool isLoop, // If true launch cyclically
         CancellationTokenSource cancellationToken)
     {
+        var currentDateTime = DateTime.Now;
+        if (startTime <= currentDateTime)
+        {
+            Console.WriteLine("ERROR: Start date time: " + startTime.ToString("dd/MM/yyyy HH:mm:ss") +
+                              " less then date time now: " + currentDateTime.ToString("dd/MM/yyyy HH:mm:ss"));
+            return;
+        }
+        
         while (!cancellationToken.IsCancellationRequested)
         {
-            var currentDateTime = DateTime.Now;
-            if (startTime <= currentDateTime && !isLoop)
-            {
-                Console.WriteLine("ERROR: You entered the time: " + startTime + " less then now: " + currentDateTime);
-                break;
-            }
+            currentDateTime = DateTime.Now;
 
-            if (isFirstExecute && startTime > currentDateTime)
+            if (isFirstExecute)
             {
                 executeMethod.Invoke();
                 isFirstExecute = false;
@@ -144,9 +147,9 @@ public class TaskScheduler
             }
 
             var timeDelay = nextStartDateTime - DateTime.Now;
-            Console.WriteLine("Next start date: " + nextStartDateTime.ToString("dd/MM/yyyy HH:mm:ss"));
+            // Console.WriteLine("Next start date: " + nextStartDateTime.ToString("dd/MM/yyyy HH:mm:ss"));
 
-            await Task.Delay(timeDelay);
+            Thread.Sleep(timeDelay);
         }
     }
 }
