@@ -2,49 +2,66 @@
 
 public class TaskScheduler
 {
-    // DI in ctor
+    private DateTime _startDateTime;
+    private readonly Enum _periodic;
+    private readonly int _interval;
+    private readonly Action _executableMethod;
+    private readonly bool _isFirstExecute;  // If true launch at the first time independently from time, if false launch on time
+    private readonly bool _isLoop;  // If true launch cyclically
+    private readonly CancellationTokenSource _cancellationToken;
 
-    public async Task JobRunner(
+    public TaskScheduler(
         DateTime startDateTime,
         Enum periodic,
         int interval,
         Action executeMethod,
-        bool isFirstExecute, // If true launch at the first time independently from time, if false launch on time
-        bool isLoop, // If true launch cyclically
+        bool isFirstExecute,
+        bool isLoop,
         CancellationTokenSource cancellationToken)
     {
+        _startDateTime = startDateTime;
+        _periodic = periodic;
+        _interval = interval;
+        _executableMethod = executeMethod;
+        _isFirstExecute = isFirstExecute;
+        _isLoop = isLoop;
+        _cancellationToken = cancellationToken;
+    }
+
+    public async Task JobRunner()
+    {
         var currentDateTime = DateTime.Now;
-        if (startDateTime <= currentDateTime) //&& !isLoop)
+        if (_startDateTime <= currentDateTime) //&& !isLoop)
         {
-            Console.WriteLine("ERROR: Start date time: " + startDateTime.ToString("dd/MM/yyyy HH:mm:ss") +
+            Console.WriteLine("ERROR: Start date time: " + _startDateTime.ToString("dd/MM/yyyy HH:mm:ss") +
                               " less then date time now: " + currentDateTime.ToString("dd/MM/yyyy HH:mm:ss"));
             return;
         }
 
-        if (isFirstExecute) executeMethod.Invoke();
+        if (_isFirstExecute) _executableMethod.Invoke();
 
         currentDateTime = DateTime.Now;
-        if (startDateTime > currentDateTime)
-            await Task.Delay(startDateTime - currentDateTime);
+        if (_startDateTime > currentDateTime)
+            await Task.Delay(_startDateTime - currentDateTime);
 
-        while (!cancellationToken.IsCancellationRequested)
+        while (!_cancellationToken.IsCancellationRequested)
         {
-            executeMethod.Invoke();
+            _executableMethod.Invoke();
 
-            if (!isLoop) break;
+            if (!_isLoop) break;
 
             
-            var nextStartDateTime = NextDateTimeToStart(periodic, interval, startDateTime);
+            var nextStartDateTime = NextDateTimeToStart(_periodic, _interval, _startDateTime);
             
             var timeDelay = nextStartDateTime - DateTime.Now;
             Console.WriteLine("Next start date: " + nextStartDateTime.ToString("dd/MM/yyyy HH:mm:ss:fff"));
 
             await Task.Delay(timeDelay);
-            startDateTime = nextStartDateTime;
+            _startDateTime = nextStartDateTime;
         }
     }
 
-    // Calculate delay to next date time to start
+    // Calculate next date time to start
     public DateTime NextDateTimeToStart(Enum periodic, int interval, DateTime startDateTime)
     {
         var nextStartDateTime = startDateTime;
