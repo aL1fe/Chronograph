@@ -28,30 +28,18 @@ class Program
         var cts = new CancellationTokenSource();
 
         var job = new Joba();
-
-        var scheduler = new TaskScheduler();
+        
         var now = DateTime.Now;
-        var startTime = new DateTime(now.Year, now.Month, now.Day, now.Hour, 20, 20);
-
-        Task.Run(() => scheduler.JobRunner(
-            startTime,
-            Every.Minute,
-            5,
+        var startDateTime = new DateTime(now.Year, now.Month, now.Day, 17, 00, 00);
+        var scheduler = new TaskScheduler(startDateTime,
+            Every.Hour,
+            3,
             job.Foo,
             false,
             true,
-            cts));
-        
-        var scheduler02 = new TaskScheduler();
-        var startTime2 = new DateTime(now.Year, now.Month, now.Day, now.Hour, 01, 40);
-        Task.Run(() => scheduler02.JobRunner(
-            startTime2,
-            Every.Minute,
-            20,
-            job.Boo,
-            true,
-            true,
-            cts));
+            cts);
+
+        Task.Run(() => scheduler.JobRunner());
 
         Console.WriteLine("Press Enter to exit...");
         Console.ReadLine();
