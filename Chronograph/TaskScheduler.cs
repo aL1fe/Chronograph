@@ -30,15 +30,31 @@ public class TaskScheduler
 
     public async Task JobRunner()
     {
-        var currentDateTime = DateTime.Now;
-        if (_startDateTime <= currentDateTime) //&& !isLoop)
-        {
-            Console.WriteLine("ERROR: Start date time: " + _startDateTime.ToString("dd/MM/yyyy HH:mm:ss") +
-                              " less then date time now: " + currentDateTime.ToString("dd/MM/yyyy HH:mm:ss"));
-            return;
-        }
-
         if (_isFirstExecute) _executableMethod.Invoke();
+        
+        var currentDateTime = DateTime.Now;
+        if (_startDateTime <= currentDateTime)
+        {
+            if (!_isLoop && !_isFirstExecute)
+            {
+                Console.WriteLine(
+                    $"ERROR: Start date time: \"{_startDateTime.ToString("dd/MM/yyyy HH:mm:ss")}\" " +
+                    $"less then date time now: \"{currentDateTime.ToString("dd/MM/yyyy HH:mm:ss")}\"");
+                return;
+            }
+
+            var timeDelay = DelayUntilNextDateTimeToStart(_periodic, _interval, _startDateTime);
+            if (timeDelay < TimeSpan.Zero)
+            {
+                Console.WriteLine(
+                    $"ERROR: Next start date time: \"{_startDateTime.ToString("dd/MM/yyyy HH:mm:ss")}\" " +
+                    $"less then date time now: \"{currentDateTime.ToString("dd/MM/yyyy HH:mm:ss")}\"");
+                Console.WriteLine($"ERROR: Periodic: \"{_periodic}\" and interval: \"{_interval}\" " +
+                                  "are not consist with start date time.");
+                return;
+            }
+            await Task.Delay(timeDelay);
+        }
 
         currentDateTime = DateTime.Now;
         if (_startDateTime > currentDateTime)
@@ -50,19 +66,12 @@ public class TaskScheduler
 
             if (!_isLoop) break;
 
-            
-            var nextStartDateTime = NextDateTimeToStart(_periodic, _interval, _startDateTime);
-            
-            var timeDelay = nextStartDateTime - DateTime.Now;
-            Console.WriteLine("Next start date: " + nextStartDateTime.ToString("dd/MM/yyyy HH:mm:ss:fff"));
-
-            await Task.Delay(timeDelay);
-            _startDateTime = nextStartDateTime;
+            await Task.Delay(DelayUntilNextDateTimeToStart(_periodic, _interval, _startDateTime));
         }
     }
 
-    // Calculate next date time to start
-    public DateTime NextDateTimeToStart(Enum periodic, int interval, DateTime startDateTime)
+    // Calculate time delay until next date time to start
+    public TimeSpan DelayUntilNextDateTimeToStart(Enum periodic, int interval, DateTime startDateTime)
     {
         var nextStartDateTime = startDateTime;
         switch (periodic)
@@ -159,7 +168,10 @@ public class TaskScheduler
                 }
                 break;
         }
-        //return nextStartDateTime.AddMilliseconds(-nextStartDateTime.Millisecond);
-        return nextStartDateTime;
+        var timeDelay = nextStartDateTime - DateTime.Now;
+        
+        Console.WriteLine("Next start date: " + nextStartDateTime.ToString("dd/MM/yyyy HH:mm:ss:fff"));
+        _startDateTime = nextStartDateTime;
+        return timeDelay;
     }
 }
