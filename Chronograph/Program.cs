@@ -30,13 +30,13 @@ class Program
         var job = new Joba();
         
         var now = DateTime.Now;
-        var startDateTime = new DateTime(now.Year, now.Month, now.Day, 17, 00, 00);
-        var scheduler = new TaskScheduler(startDateTime,
-            Every.Hour,
-            3,
-            job.Foo,
+        var startDateTime = new DateTime(now.Year, now.Month, now.Day, 12, 15, 00);
+        var scheduler = new TaskScheduler(
+            startDateTime,
+            Every.Minute,
+            10,
             false,
-            true,
+            job.Foo,
             cts);
 
         Task.Run(() => scheduler.JobRunner());

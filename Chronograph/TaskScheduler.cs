@@ -1,45 +1,54 @@
-﻿namespace Chronograph;
+﻿using System.Reflection;
+
+namespace Chronograph;
 
 public class TaskScheduler
 {
     private DateTime _startDateTime;
-    private readonly Enum _periodic;
+    private readonly Enum? _periodic;
     private readonly int _interval;
     private readonly Action _executableMethod;
-    private readonly bool _isFirstExecute;  // If true launch at the first time independently from time, if false launch on time
-    private readonly bool _isLoop;  // If true launch cyclically
+    private readonly bool _isFirstExecute;  // If true launch at the first time independently from time
     private readonly CancellationTokenSource _cancellationToken;
 
     public TaskScheduler(
         DateTime startDateTime,
-        Enum periodic,
+        Enum? periodic,
         int interval,
-        Action executeMethod,
         bool isFirstExecute,
-        bool isLoop,
+        Action executeMethod,
         CancellationTokenSource cancellationToken)
     {
         _startDateTime = startDateTime;
         _periodic = periodic;
         _interval = interval;
-        _executableMethod = executeMethod;
         _isFirstExecute = isFirstExecute;
-        _isLoop = isLoop;
+        _executableMethod = executeMethod;
         _cancellationToken = cancellationToken;
     }
 
     public async Task JobRunner()
     {
-        if (_isFirstExecute) _executableMethod.Invoke();
+        if (_interval <= 0 && _periodic != null)
+        {
+            Console.WriteLine("ERROR: Interval cannot be zero or less.");
+            return;
+        }
+        
+        if (_isFirstExecute)
+        {
+            _executableMethod.Invoke();
+            if (_periodic == null) return;
+        }
         
         var currentDateTime = DateTime.Now;
         if (_startDateTime <= currentDateTime)
         {
-            if (!_isLoop && !_isFirstExecute)
+            if (_periodic == null)
             {
                 Console.WriteLine(
-                    $"ERROR: Start date time: \"{_startDateTime.ToString("dd/MM/yyyy HH:mm:ss")}\" " +
-                    $"less then date time now: \"{currentDateTime.ToString("dd/MM/yyyy HH:mm:ss")}\"");
+                    $"ERROR: Start date time: \"{_startDateTime:dd/MM/yyyy HH:mm:ss}\" " +
+                    $"less then date time now: \"{currentDateTime:dd/MM/yyyy HH:mm:ss}\"");
                 return;
             }
 
@@ -47,8 +56,8 @@ public class TaskScheduler
             if (timeDelay < TimeSpan.Zero)
             {
                 Console.WriteLine(
-                    $"ERROR: Next start date time: \"{_startDateTime.ToString("dd/MM/yyyy HH:mm:ss")}\" " +
-                    $"less then date time now: \"{currentDateTime.ToString("dd/MM/yyyy HH:mm:ss")}\"");
+                    $"ERROR: Next start date time: \"{_startDateTime:dd/MM/yyyy HH:mm:ss}\" " +
+                    $"less then date time now: \"{currentDateTime:dd/MM/yyyy HH:mm:ss}\"");
                 Console.WriteLine($"ERROR: Periodic: \"{_periodic}\" and interval: \"{_interval}\" " +
                                   "are not consist with start date time.");
                 return;
@@ -64,14 +73,14 @@ public class TaskScheduler
         {
             _executableMethod.Invoke();
 
-            if (!_isLoop) break;
+            if (_periodic == null) break;
 
             await Task.Delay(DelayUntilNextDateTimeToStart(_periodic, _interval, _startDateTime));
         }
     }
 
     // Calculate time delay until next date time to start
-    public TimeSpan DelayUntilNextDateTimeToStart(Enum periodic, int interval, DateTime startDateTime)
+    private TimeSpan DelayUntilNextDateTimeToStart(Enum periodic, int interval, DateTime startDateTime)
     {
         var nextStartDateTime = startDateTime;
         switch (periodic)
@@ -170,7 +179,7 @@ public class TaskScheduler
         }
         var timeDelay = nextStartDateTime - DateTime.Now;
         
-        Console.WriteLine("Next start date: " + nextStartDateTime.ToString("dd/MM/yyyy HH:mm:ss:fff"));
+        Console.WriteLine($"Next start date method \"{_executableMethod.GetMethodInfo().Name}\": {nextStartDateTime:dd/MM/yyyy HH:mm:ss:fff}");
         _startDateTime = nextStartDateTime;
         return timeDelay;
     }
