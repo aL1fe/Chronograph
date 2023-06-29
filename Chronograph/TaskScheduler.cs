@@ -2,18 +2,40 @@
 
 namespace Chronograph;
 
+public class Periodic
+{
+    public static readonly Periodic Monday = new Periodic();
+    public static readonly Periodic Tuesday = new Periodic();
+    public static readonly Periodic Wednesday = new Periodic();
+    public static readonly Periodic Thursday = new Periodic();
+    public static readonly Periodic Friday = new Periodic();
+    public static readonly Periodic Saturday = new Periodic();
+    public static readonly Periodic Sunday = new Periodic();
+    public static readonly Periodic Second = new Periodic();
+    public static readonly Periodic Minute = new Periodic();
+    public static readonly Periodic Hour = new Periodic();
+    public static readonly Periodic Day = new Periodic();
+    public static readonly Periodic Week = new Periodic();
+    public static readonly Periodic Month = new Periodic();
+    public static readonly Periodic Year = new Periodic();
+
+    private Periodic()
+    {
+    }
+}
+
 public class TaskScheduler
 {
     private DateTime _startDateTime;
-    private readonly Enum? _periodic;
+    private readonly Periodic? _periodic;
     private readonly int _interval;
     private readonly Action _executableMethod;
-    private readonly bool _isFirstExecute;  // If true launch at the first time independently from time
+    private readonly bool _isFirstExecute; // If true launch at the first time independently from time
     private readonly CancellationTokenSource _cancellationToken;
 
     public TaskScheduler(
         DateTime startDateTime,
-        Enum? periodic,
+        Periodic? periodic,
         int interval,
         bool isFirstExecute,
         Action executeMethod,
@@ -34,13 +56,10 @@ public class TaskScheduler
             Console.WriteLine("ERROR: Interval cannot be zero or less.");
             return;
         }
-        
+
         if (_isFirstExecute)
-        {
             _executableMethod.Invoke();
-            if (_periodic == null) return;
-        }
-        
+
         var currentDateTime = DateTime.Now;
         if (_startDateTime <= currentDateTime)
         {
@@ -53,15 +72,11 @@ public class TaskScheduler
             }
 
             var timeDelay = DelayUntilNextDateTimeToStart(_periodic, _interval, _startDateTime);
-            if (timeDelay < TimeSpan.Zero)
+            while (timeDelay < TimeSpan.Zero)
             {
-                Console.WriteLine(
-                    $"ERROR: Next start date time: \"{_startDateTime:dd/MM/yyyy HH:mm:ss}\" " +
-                    $"less then date time now: \"{currentDateTime:dd/MM/yyyy HH:mm:ss}\"");
-                Console.WriteLine($"ERROR: Periodic: \"{_periodic}\" and interval: \"{_interval}\" " +
-                                  "are not consist with start date time.");
-                return;
+                timeDelay = DelayUntilNextDateTimeToStart(_periodic, _interval, _startDateTime);
             }
+
             await Task.Delay(timeDelay);
         }
 
@@ -80,105 +95,62 @@ public class TaskScheduler
     }
 
     // Calculate time delay until next date time to start
-    private TimeSpan DelayUntilNextDateTimeToStart(Enum periodic, int interval, DateTime startDateTime)
+    private TimeSpan DelayUntilNextDateTimeToStart(Periodic? periodic, int interval, DateTime startDateTime)
     {
         var nextStartDateTime = startDateTime;
-        switch (periodic)
-        {
-            case Every.Second:
-                nextStartDateTime = nextStartDateTime.AddSeconds(interval);
-                break;
-            case Every.Minute:
-                nextStartDateTime = nextStartDateTime.AddMinutes(interval);
-                break;
-            case Every.Hour:
-                nextStartDateTime = nextStartDateTime.AddHours(interval);
-                break;
-            case Every.Day:
-                nextStartDateTime = nextStartDateTime.AddDays(interval);
-                break;
-            case Every.Week:
-                nextStartDateTime = nextStartDateTime.AddDays(interval);
-                break;
-            case Every.Month:
-                nextStartDateTime = nextStartDateTime.AddMonths(interval);
-                break;
-            case Every.Year:
-                nextStartDateTime = nextStartDateTime.AddYears(interval);
-                break;
-            case Every.Monday:
-                for (int i = 0; i < interval; i++)
-                {
-                    while (nextStartDateTime.DayOfWeek != DayOfWeek.Sunday)
-                    {
-                        nextStartDateTime = nextStartDateTime.AddDays(1);
-                    }
-                    nextStartDateTime = nextStartDateTime.AddDays(1);
-                }
-                break;
-            case Every.Tuesday:
-                for (int i = 0; i < interval; i++)
-                {
-                    while (nextStartDateTime.DayOfWeek != DayOfWeek.Monday)
-                    {
-                        nextStartDateTime = nextStartDateTime.AddDays(1);
-                    }
-                    nextStartDateTime = nextStartDateTime.AddDays(1);
-                }
-                break;
-            case Every.Wednesday:
-                for (int i = 0; i < interval; i++)
-                {
-                    while (nextStartDateTime.DayOfWeek != DayOfWeek.Tuesday)
-                    {
-                        nextStartDateTime = nextStartDateTime.AddDays(1);
-                    }
-                    nextStartDateTime = nextStartDateTime.AddDays(1);
-                }
-                break;
-            case Every.Thursday:
-                for (int i = 0; i < interval; i++)
-                {
-                    while (nextStartDateTime.DayOfWeek != DayOfWeek.Wednesday)
-                    {
-                        nextStartDateTime = nextStartDateTime.AddDays(1);
-                    }
-                    nextStartDateTime = nextStartDateTime.AddDays(1);
-                }
-                break;
-            case Every.Friday:
-                for (int i = 0; i < interval; i++)
-                {
-                    while (nextStartDateTime.DayOfWeek != DayOfWeek.Thursday)
-                    {
-                        nextStartDateTime = nextStartDateTime.AddDays(1);
-                    }
-                    nextStartDateTime = nextStartDateTime.AddDays(1);
-                }
-                break;
-            case Every.Saturday:
-                for (int i = 0; i < interval; i++)
-                {
-                    while (nextStartDateTime.DayOfWeek != DayOfWeek.Friday)
-                    {
-                        nextStartDateTime = nextStartDateTime.AddDays(1);
-                    }
-                    nextStartDateTime = nextStartDateTime.AddDays(1);
-                }
-                break;
-            case Every.Sunday:
-                for (int i = 0; i < interval; i++)
-                {
-                    while (nextStartDateTime.DayOfWeek != DayOfWeek.Saturday)
-                    {
-                        nextStartDateTime = nextStartDateTime.AddDays(1);
-                    }
-                    nextStartDateTime = nextStartDateTime.AddDays(1);
-                }
-                break;
-        }
-        var timeDelay = nextStartDateTime - DateTime.Now;
         
+        if (periodic == Periodic.Second) nextStartDateTime = nextStartDateTime.AddSeconds(interval);
+        else if (periodic == Periodic.Minute) nextStartDateTime = nextStartDateTime.AddMinutes(interval);
+        else if (periodic == Periodic.Hour) nextStartDateTime = nextStartDateTime.AddHours(interval);
+        else if (periodic == Periodic.Day) nextStartDateTime = nextStartDateTime.AddDays(interval);
+        else if (periodic == Periodic.Week) nextStartDateTime = nextStartDateTime.AddDays(7 * interval);
+        else if (periodic == Periodic.Month) nextStartDateTime = nextStartDateTime.AddMonths(interval);
+        else if (periodic == Periodic.Year) nextStartDateTime = nextStartDateTime.AddYears(interval);
+        else if (periodic == Periodic.Monday)
+            for (var i = 0; i < interval; i++)
+            {
+                while (nextStartDateTime.DayOfWeek != DayOfWeek.Sunday) nextStartDateTime = nextStartDateTime.AddDays(1);
+                nextStartDateTime = nextStartDateTime.AddDays(1);
+            }
+        else if (periodic == Periodic.Tuesday)
+            for (var i = 0; i < interval; i++)
+            {
+                while (nextStartDateTime.DayOfWeek != DayOfWeek.Monday) nextStartDateTime = nextStartDateTime.AddDays(1);
+                nextStartDateTime = nextStartDateTime.AddDays(1);
+            }
+        else if (periodic == Periodic.Wednesday)
+            for (var i = 0; i < interval; i++)
+            {
+                while (nextStartDateTime.DayOfWeek != DayOfWeek.Tuesday) nextStartDateTime = nextStartDateTime.AddDays(1);
+                nextStartDateTime = nextStartDateTime.AddDays(1);
+            }
+        else if (periodic == Periodic.Thursday)
+            for (var i = 0; i < interval; i++)
+            {
+                while (nextStartDateTime.DayOfWeek != DayOfWeek.Wednesday) nextStartDateTime = nextStartDateTime.AddDays(1);
+                nextStartDateTime = nextStartDateTime.AddDays(1);
+            }
+        else if (periodic == Periodic.Friday)
+            for (var i = 0; i < interval; i++)
+            {
+                while (nextStartDateTime.DayOfWeek != DayOfWeek.Thursday) nextStartDateTime = nextStartDateTime.AddDays(1);
+                nextStartDateTime = nextStartDateTime.AddDays(1);
+            }
+        else if (periodic == Periodic.Saturday)
+            for (var i = 0; i < interval; i++)
+            {
+                while (nextStartDateTime.DayOfWeek != DayOfWeek.Friday) nextStartDateTime = nextStartDateTime.AddDays(1);
+                nextStartDateTime = nextStartDateTime.AddDays(1);
+            }
+        else if (periodic == Periodic.Sunday)
+            for (var i = 0; i < interval; i++)
+            {
+                while (nextStartDateTime.DayOfWeek != DayOfWeek.Saturday) nextStartDateTime = nextStartDateTime.AddDays(1);
+                nextStartDateTime = nextStartDateTime.AddDays(1);
+            }
+        
+        var timeDelay = nextStartDateTime - DateTime.Now;
+
         Console.WriteLine($"Next start date method \"{_executableMethod.GetMethodInfo().Name}\": {nextStartDateTime:dd/MM/yyyy HH:mm:ss:fff}");
         _startDateTime = nextStartDateTime;
         return timeDelay;

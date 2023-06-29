@@ -1,26 +1,4 @@
 ﻿namespace Chronograph;
-
-enum Every
-{
-    Monday,
-    Tuesday,
-    Wednesday,
-    Thursday,
-    Friday,
-    Saturday,
-    Sunday,
-
-    // LastDayOfMonth
-    // FirstDayOfMonth
-    Second,
-    Minute,
-    Hour,
-    Day,
-    Week,
-    Month,
-    Year
-}
-
 class Program
 {
     static void Main()
@@ -30,12 +8,12 @@ class Program
         var job = new Joba();
         
         var now = DateTime.Now;
-        var startDateTime = new DateTime(now.Year, now.Month, now.Day, 12, 15, 00);
+        var startDateTime = new DateTime(now.Year, now.Month, now.Day, 16, 48, 00);
         var scheduler = new TaskScheduler(
             startDateTime,
-            Every.Minute,
-            10,
-            false,
+            Periodic.Minute,
+            2,
+            true,
             job.Foo,
             cts);
 
